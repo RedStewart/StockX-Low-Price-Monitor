@@ -1,0 +1,24 @@
+{
+  "name": "stockx-low-price-monitor",
+  "version": "1.0.0",
+  "description": "��#\u0000 \u0000S\u0000t\u0000o\u0000c\u0000k\u0000X\u0000-\u0000l\u0000o\u0000w\u0000-\u0000p\u0000r\u0000i\u0000c\u0000e\u0000-\u0000m\u0000o\u0000n\u0000i\u0000t\u0000o\u0000r\u0000\r\u0000 \u0000",
+  "main": "index.js",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
+    "request": "^2.88.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RedStewart/StockX-low-price-monitor.git"
+  },
+  "author": "Reed Stewart",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RedStewart/StockX-low-price-monitor/issues"
+  },
+  "homepage": "https://github.com/RedStewart/StockX-low-price-monitor#readme"
+}
