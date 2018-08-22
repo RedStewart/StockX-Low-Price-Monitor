@@ -1,9 +1,10 @@
 const request = require('request');
 const cheerio = require('cheerio');
 const path = require('path');
+
 const urlArr = [];
-const initShoeArr = [];
-const compareShoeArr = [];
+const initArr = [];
+const compareArr = [];
 const config = require(path.join(__dirname, 'config.json'));
 
 var today = new Date(),
@@ -16,12 +17,6 @@ var time = "[" + h + ":" + m + ":" + s + ":" + ms + "]";
 function checkTime(i) {
     return (i < 10) ? "0" + i : i;
 }
-
-for (x = 0; x < config.shoeURL.length; x++) {
-    urlArr.push(config.shoeURL[x]);
-    //console.log(urlArr[x]);
-}
-
 
 function requestURL(url, index) {
     console.log(time + " Sending request...");
@@ -55,9 +50,9 @@ function requestURL(url, index) {
             
             //add shoe data to respective array from index given (temporary until better fix)
             if(index == 1)
-                initShoeArr.push(shoeArr);
+                initArr.push(shoeArr);
             else
-                compareShoeArr.push(shoeArr);
+                compareArr.push(shoeArr);
         }
         else {
             console.log("[ERROR] " + error);
@@ -65,23 +60,38 @@ function requestURL(url, index) {
     })    
 }
 
-
-
 //main
 function main() {
+    for (x = 0; x < config.shoeURL.length; x++) {
+        urlArr.push(config.shoeURL[x]);
+    }
+    //populate initial array full of desired shoes
     for (x = 0; x < urlArr.length; x++) {
-        var test = requestURL(urlArr[x], 1);
-    }   
+        requestURL(urlArr[x], 1);
+    }
     
     //have to make timeout as request is async (temporary until better fix)
     setTimeout(function () {
-        //console.log(initShoeArr);
+        for (x = 0; x < urlArr.length; x++) {
+            requestURL(urlArr[x], 0);
+        }
+        
+        setTimeout(function () {
+            for(x = 0; x < initArr[0].length - 1; x++){
+                for(y = 0; y < initArr[x][1].length; y++){
+                    var initPrice = initArr[x][1][y];
+                    var comparePrice = compareArr[x][1][y];
 
-        for(i = 0; i < initShoeArr[0][0].length; i++){
-            console.log(initShoeArr[0][0][i]);
-            console.log(initShoeArr[0][1][i]);
-        }        
-    }, 5000);
+                    if(initPrice == comparePrice)
+                        console.log('yeet');
+
+                }
+            }
+
+        }, 3000);
+        
+    }, 3000);
 }
+
 
 main();
