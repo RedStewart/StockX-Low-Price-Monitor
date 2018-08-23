@@ -1,7 +1,16 @@
 {
-    "interval":10000,
+    "interval":20000,
 
     "shoeURL": [
-        "nike-air-presto-off-white"    
-    ]
+        "adidas-yeezy-boost-350-v2-butter",
+        "nike-air-force-1-low-travis-scott-sail",
+        "adidas-yeezy-500-utility-black",
+        "adidas-yeezy-boost-350-v2-cream-white",
+        "adidas-nmd-hu-pharrell-solar-pack-red"    
+    ],
+
+    "webhook": {
+        "webhookUrl": "",
+        "aftermsg": ""
+    }
 }
