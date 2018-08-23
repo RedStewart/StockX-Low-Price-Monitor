@@ -31,6 +31,10 @@ try {
                         const shoeArr = [];
                         const priceArr = [];
                         const sizeArr = [];
+                        //check if body != null if it does restart loop? if its null will disrupt comparisons
+                        if (body == null) {
+                            console.log('NODEALIO');
+                        }
 
                         var $ = cheerio.load(body);
                         console.log(getTime() + " Scraping " + $('h1').text());
@@ -71,7 +75,6 @@ try {
 
     function compareArrays() {
         initArr.sort();
-
         console.log(getTime() + ' Creating comparison array');
         //have to make timeout as request is async (temporary until better fix)
         setTimeout(function () {
@@ -81,9 +84,8 @@ try {
 
             setTimeout(function () {
                 compareArr.sort();
-                console.log(compareArr);
                 console.log(getTime() + ' Comparing prices');
-                for (x = 0; x < compareArr[0].length; x++) {
+                for (x = 0; x < compareArr.length; x++) {
                     for (y = 0; y < initArr[x][1].length; y++) {
                         var initPrice = initArr[x][1][y];
                         var comparePrice = compareArr[x][1][y];
@@ -122,7 +124,6 @@ try {
 
         //tick
         intervalTimer = setInterval(compareArrays, interval);
-
     }
 
     main();
