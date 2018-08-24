@@ -3,14 +3,12 @@
 
     "shoeURL": [
         "adidas-yeezy-boost-350-v2-butter",
-        "nike-air-force-1-low-travis-scott-sail",
-        "adidas-yeezy-500-utility-black",
-        "adidas-yeezy-boost-350-v2-cream-white",
-        "adidas-nmd-hu-pharrell-solar-pack-red"    
+        "air-jordan-1-retro-high-off-white-chicago",
+        "nike-air-force-1-low-travis-scott-sail"    
     ],
 
     "webhook": {
-        "webhookUrl": "",
+        "webhookUrl": "https://discordapp.com/api/webhooks/436121479382564866/doyXkP-YXDD-vDkVOlpoCff1OaOMCo2zHPah3datPZLjdVmUFGDDL4E3UrpOKdOMdIQX",
         "aftermsg": ""
     }
 }
