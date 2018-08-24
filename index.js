@@ -7,6 +7,9 @@ try {
     const urlArr = [];
     const initArr = [];
     var compareArr = [];
+    const infoArr = [];
+
+    
     const config = require(path.join(__dirname, 'config.json'));
     const Hook = new Webhook(config.webhook.webhookUrl);
 
@@ -31,13 +34,12 @@ try {
                         const shoeArr = [];
                         const priceArr = [];
                         const sizeArr = [];
-                        //check if body != null if it does restart loop? if its null will disrupt comparisons
-                        if (body == null) {
-                            console.log('NODEALIO');
-                        }
 
                         var $ = cheerio.load(body);
-                        console.log(getTime() + " Scraping " + $('h1').text());
+                        var shoeTitle = $('h1').text();
+                        var shoeImg = $('div.image-container > img').attr('src');
+                        infoArr.push(shoeTitle, shoeImg);
+                        console.log(getTime() + " Scraping " + shoeTitle);
 
                         //prices
                         $('div.mobile-header-inner > div.options > div.form-group > div.select-control > div.select-options > ul.list-unstyled > li.select-option > div.inset > div.subtitle').each((i, el) => {
@@ -55,13 +57,17 @@ try {
                             sizeArr.push(size);
                         });
 
-                        shoeArr.push(sizeArr, priceArr);
+                        shoeArr.push(sizeArr, priceArr, infoArr);
 
                         //add shoe data to respective array from index given (temporary until better fix)
-                        if (index == 1)
+                        if (index == 1){
                             initArr.push(shoeArr);
-                        else
+                            console.log(initArr);
+                        }
+                        else{
                             compareArr.push(shoeArr);
+                            console.log(compareArr);
+                        }
                     }
                     else {
                         console.log("[ERROR] " + error);
@@ -84,9 +90,11 @@ try {
 
             setTimeout(function () {
                 compareArr.sort();
+                console.log(compareArr);
                 console.log(getTime() + ' Comparing prices');
                 for (x = 0; x < compareArr.length; x++) {
-                    for (y = 0; y < initArr[x][1].length; y++) {
+                    for (y = 0; y < 1; y++) {
+                    //for (y = 0; y < initArr[x][1].length; y++) {
                         var initPrice = initArr[x][1][y];
                         var comparePrice = compareArr[x][1][y];
 
@@ -97,6 +105,7 @@ try {
                             console.log('more yeet');
                         }
                         else {
+                            Hook.custom('Captain Hook', 'New low price found!\nSize: ' + compareArr[x][0][y] + '\nPrice: ' + comparePrice, compareArr[x][2][0], '#ff9933', compareArr[x][2][1]);
                             console.log('No change found');
                         }
                     }
@@ -110,6 +119,8 @@ try {
     function main() {
         console.log(getTime() + ' Starting...');
         var interval = config.interval;
+        //Hook.custom('Captain Hook', 'succ mein kumpf dik 4 free', 'YOZUK DA ANUK', '#ff9933', 'https://stockx-360.imgix.net/Adidas-Yeezy-Boost-350-V2-Butter/Images/Adidas-Yeezy-Boost-350-V2-Butter/Lv2/img36.jpg?auto=format,compress&w=1117&q=90&dpr=2');
+
 
         console.log(getTime() + ' Finding requested shoes');
         for (x = 0; x < config.shoeURL.length; x++) {
@@ -121,12 +132,11 @@ try {
         for (x = 0; x < urlArr.length; x++) {
             requestURL(urlArr[x], 1);
         }
-
         //tick
         intervalTimer = setInterval(compareArrays, interval);
     }
-
     main();
+    
 } catch (err) {
     console.log('[ERROR] ' + err);
 }
