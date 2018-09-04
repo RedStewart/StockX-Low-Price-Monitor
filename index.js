@@ -7,7 +7,7 @@ try {
     const urlArr = [];
     const initArr = [];
     var compareArr = [];
-    const infoArr = [];
+    var infoArr = [];
 
     
     const config = require(path.join(__dirname, 'config.json'));
@@ -68,10 +68,11 @@ try {
                             compareArr.push(shoeArr);
                             console.log(compareArr);
                         }
+                        infoArr = [];
                     }
                     else {
                         console.log("[ERROR] " + error);
-                    }
+                    }                    
                 })
             }, 1000);
         } catch (err) {
@@ -119,8 +120,6 @@ try {
     function main() {
         console.log(getTime() + ' Starting...');
         var interval = config.interval;
-        //Hook.custom('Captain Hook', 'succ mein kumpf dik 4 free', 'YOZUK DA ANUK', '#ff9933', 'https://stockx-360.imgix.net/Adidas-Yeezy-Boost-350-V2-Butter/Images/Adidas-Yeezy-Boost-350-V2-Butter/Lv2/img36.jpg?auto=format,compress&w=1117&q=90&dpr=2');
-
 
         console.log(getTime() + ' Finding requested shoes');
         for (x = 0; x < config.shoeURL.length; x++) {
