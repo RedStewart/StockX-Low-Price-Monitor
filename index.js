@@ -10,7 +10,7 @@ try {
     var infoArr = [];
     const colourArr = ['FF3855', 'FF7A00', 'FDFF00', '87FF2A', '4F86F7', 'DB91EF', '6F2DA8'];
 
-    
+
     const config = require(path.join(__dirname, 'config.json'));
     const Hook = new Webhook(config.webhook.webhookUrl);
 
@@ -62,11 +62,11 @@ try {
                         shoeArr.push(sizeArr, priceArr, infoArr);
 
                         //add shoe data to respective array from index given (temporary until better fix)
-                        if (index == 1){
+                        if (index == 1) {
                             initArr.push(shoeArr);
                             //console.log(initArr);
                         }
-                        else{
+                        else {
                             compareArr.push(shoeArr);
                             //console.log(compareArr);
                         }
@@ -74,7 +74,7 @@ try {
                     }
                     else {
                         console.log("[ERROR] " + error);
-                    }                    
+                    }
                 })
             }, 1000);
         } catch (err) {
@@ -90,40 +90,42 @@ try {
             for (x = 0; x < urlArr.length; x++) {
                 requestURL(urlArr[x], 0);
             }
-
             setTimeout(function () {
                 compareArr.sort();
                 //console.log(compareArr);
                 console.log(getTime() + ' Comparing prices');
                 for (x = 0; x < compareArr.length; x++) {
-                    for (y = 0; y < 1; y++) {
-                    //this is to compare all prices but using the above loop for testing 1 until better
-                    //for (y = 0; y < initArr[x][1].length; y++) {
-                        var initPrice = initArr[x][1][y];
-                        var comparePrice = compareArr[x][1][y];
+                    if (typeof compareArr[x] !== 'undefined') {
+                        //for (y = 0; y < 1; y++) {
+                        //this is to compare all prices but using the above loop for testing 1 until better
+                        for (y = 0; y < initArr[x][1].length; y++) {
+                            var initPrice = initArr[x][1][y];
+                            var comparePrice = compareArr[x][1][y];
 
-                        if (comparePrice < initPrice) {
-                            var difference = (comparePrice / initPrice) * 100;
-                            var decreasePer = 100 - difference;
+                            if (comparePrice < initPrice) {
+                                var difference = (comparePrice / initPrice) * 100;
+                                var decreasePer = 100 - difference;
 
-                            Hook.custom('Captain Hook', 'New low price found!\nSize: ' + compareArr[x][0][y] + '\nPrice: ' + comparePrice + '\n Difference: ' + decreasePer + '%\nLink: ' + compareArr[x][2][2], compareArr[x][2][0], '#' + (colourArr[Math.floor(Math.random() * colourArr.length)]), compareArr[x][2][1]);
+                                Hook.custom('Captain Hook', 'New low price found!\nSize: ' + compareArr[x][0][y] + '\nPrice: ' + comparePrice + '\n Difference: ' + decreasePer + '%\nLink: ' + compareArr[x][2][2], compareArr[x][2][0], '#' + (colourArr[Math.floor(Math.random() * colourArr.length)]), compareArr[x][2][1]);
 
 
-                            initArr[x][1][y] = compareArr[x][1][y];
-                            console.log('less yeet');
-                        }
-                        else if (comparePrice > initPrice) {
-                            console.log('more yeet');
-                            //work out which array to change, also need to include error check when array returns null
-                            //initArr[x][1][y] = comparePrice;
-                        }
-                        else {
-                            //Hook.custom('Captain Hook', 'New low price found!\nSize: ' + compareArr[x][0][y] + '\nPrice: ' + comparePrice + '\nLink: ' + compareArr[x][2][2], compareArr[x][2][0], '#' + (colourArr[Math.floor(Math.random() * colourArr.length)]), compareArr[x][2][1]);
-                            console.log('No change found');
+                                initArr[x][1][y] = compareArr[x][1][y];
+                                console.log('less yeet');
+                            }
+                            else if (comparePrice > initPrice) {
+                                console.log('more yeet');
+                                //initArr[x][1][y] = comparePrice;
+                            }
+                            else {
+                                //Hook.custom('Captain Hook', 'New low price found!\nSize: ' + compareArr[x][0][y] + '\nPrice: ' + comparePrice + '\nLink: ' + compareArr[x][2][2], compareArr[x][2][0], '#' + (colourArr[Math.floor(Math.random() * colourArr.length)]), compareArr[x][2][1]);
+                                //console.log('No change found');
+                            }
+
                         }
                     }
                 }
             }, 10000);
+
         }, 5000);
         compareArr = [];
     }
@@ -146,8 +148,9 @@ try {
         //tick
         intervalTimer = setInterval(compareArrays, interval);
     }
+
     main();
-    
+
 } catch (err) {
     console.log('[ERROR] ' + err);
 }
