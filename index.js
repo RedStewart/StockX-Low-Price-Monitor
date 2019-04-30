@@ -1,156 +1,123 @@
-try {
-    const request = require('request');
-    const cheerio = require('cheerio');
-    const path = require('path');
-    const Webhook = require('webhook-discord');
+const axios = require('axios');
+const cheerio = require('cheerio');
+const path = require('path');
+const Webhook = require("webhook-discord");
+const shoe = require('./Shoe');
+const Shoe = shoe.Shoe;
 
-    const urlArr = [];
-    const initArr = [];
-    var compareArr = [];
-    var infoArr = [];
-    const colourArr = ['FF3855', 'FF7A00', 'FDFF00', '87FF2A', '4F86F7', 'DB91EF', '6F2DA8'];
+const config = require(path.join(__dirname, "config.json"));
+const Hook = new Webhook.Webhook(config.webhook)
+var shoeUrl = config.shoeURL;
 
+async function requestURL() {
+    var shoeArr = [];
+    for (let x = 0; x < shoeUrl.length; x++) {
+        //let beforeTime = Date.now();
+        let url = "https://stockx.com/" + shoeUrl[x];
+        let response = await axios.get(url);
+        let $ = cheerio.load(response.data);
 
-    const config = require(path.join(__dirname, 'config.json'));
-    const Hook = new Webhook(config.webhook.webhookUrl);
+        let shoeName = $("h1").text();
+        let sizeArr = getSizes($);
+        let priceArr = getPrices($);
+        let shoeImage = $('div.image-container > img').attr('src');
 
-    function getTime() {
-        var today = new Date();
-        h = checkTime(today.getHours());
-        m = checkTime(today.getMinutes());
-        s = checkTime(today.getSeconds());
-        ms = checkTime(today.getMilliseconds());
-        return time = "[" + h + ":" + m + ":" + s + ":" + ms + "]";
+        shoeArr.push(new Shoe(shoeName, sizeArr, priceArr, url, shoeImage));
+
+        //console.log("Time elapsed: [" + (Date.now() - beforeTime) / 1000 + "] " + shoeName);
     }
-    function checkTime(i) {
-        return (i < 10) ? "0" + i : i;
-    }
-
-    function requestURL(url, index) {
-        try {
-            setTimeout(function () {
-                request("https://stockx.com/" + url, function (error, response, body) {
-                    if (!error && response.statusCode == 200) {
-                        var price, size;
-                        const shoeArr = [];
-                        const priceArr = [];
-                        const sizeArr = [];
-
-                        var $ = cheerio.load(body);
-                        var shoeTitle = $('h1').text();
-                        var shoeImg = $('div.image-container > img').attr('src');
-                        var shoeURLLink = "https://stockx.com/" + url;
-                        infoArr.push(shoeTitle, shoeImg, shoeURLLink);
-                        console.log(getTime() + " Scraping " + shoeTitle);
-
-                        //prices
-                        $('div.mobile-header-inner > div.options > div.form-group > div.select-control > div.select-options > ul.list-unstyled > li.select-option > div.inset > div.subtitle').each((i, el) => {
-                            price = $(el).text();
-                            if (price.startsWith("$")) {
-                                priceTest = price.substr(1);
-                                priceArr.push(parseInt(priceTest));
-                            }
-                            else
-                                priceArr.push(0);
-                        });
-                        //size
-                        $('div.mobile-header-inner > div.options > div.form-group > div.select-control > div.select-options > ul.list-unstyled > li.select-option > div.inset > div.title').each((i, el) => {
-                            size = $(el).text();
-                            sizeArr.push(size);
-                        });
-
-                        shoeArr.push(sizeArr, priceArr, infoArr);
-
-                        //add shoe data to respective array from index given (temporary until better fix)
-                        if (index == 1) {
-                            initArr.push(shoeArr);
-                            //console.log(initArr);
-                        }
-                        else {
-                            compareArr.push(shoeArr);
-                            //console.log(compareArr);
-                        }
-                        infoArr = [];
-                    }
-                    else {
-                        console.log("[ERROR] " + error);
-                    }
-                })
-            }, 1000);
-        } catch (err) {
-            console.log('[ERROR] ' + err);
-        }
-    }
-
-    function compareArrays() {
-        initArr.sort();
-        console.log(getTime() + ' Creating comparison array');
-        //have to make timeout as request is async (temporary until better fix)
-        setTimeout(function () {
-            for (x = 0; x < urlArr.length; x++) {
-                requestURL(urlArr[x], 0);
-            }
-            setTimeout(function () {
-                compareArr.sort();
-                //console.log(compareArr);
-                console.log(getTime() + ' Comparing prices');
-                for (x = 0; x < compareArr.length; x++) {
-                    if (typeof compareArr[x] !== 'undefined') {
-                        //for (y = 0; y < 1; y++) {
-                        //this is to compare all prices but using the above loop for testing 1 until better
-                        for (y = 0; y < initArr[x][1].length; y++) {
-                            var initPrice = initArr[x][1][y];
-                            var comparePrice = compareArr[x][1][y];
-
-                            if (comparePrice < initPrice) {
-                                var difference = (comparePrice / initPrice) * 100;
-                                var decreasePer = 100 - difference;
-
-                                Hook.custom('Captain Hook', 'New low price found!\nSize: ' + compareArr[x][0][y] + '\nPrice: ' + comparePrice + '\n Difference: ' + decreasePer + '%\nLink: ' + compareArr[x][2][2], compareArr[x][2][0], '#' + (colourArr[Math.floor(Math.random() * colourArr.length)]), compareArr[x][2][1]);
-
-
-                                initArr[x][1][y] = compareArr[x][1][y];
-                                console.log('less yeet');
-                            }
-                            else if (comparePrice > initPrice) {
-                                console.log('more yeet');
-                                //initArr[x][1][y] = comparePrice;
-                            }
-                            else {
-                                //Hook.custom('Captain Hook', 'New low price found!\nSize: ' + compareArr[x][0][y] + '\nPrice: ' + comparePrice + '\nLink: ' + compareArr[x][2][2], compareArr[x][2][0], '#' + (colourArr[Math.floor(Math.random() * colourArr.length)]), compareArr[x][2][1]);
-                                //console.log('No change found');
-                            }
-
-                        }
-                    }
-                }
-            }, 10000);
-
-        }, 5000);
-        compareArr = [];
-    }
-
-    //main
-    function main() {
-        console.log(getTime() + ' Starting...');
-        var interval = config.interval;
-
-        console.log(getTime() + ' Finding requested shoes');
-        for (x = 0; x < config.shoeURL.length; x++) {
-            urlArr.push(config.shoeURL[x]);
-        }
-
-        console.log(getTime() + ' Gathering initial prices');
-        //populate initial array full of desired shoes
-        for (x = 0; x < urlArr.length; x++) {
-            requestURL(urlArr[x], 1);
-        }
-        //tick
-        intervalTimer = setInterval(compareArrays, interval);
-    }
-
-    main();
-
-} catch (err) {
-    console.log('[ERROR] ' + err);
+    return shoeArr;
 }
+
+async function comparePrices(initialArr) {
+    let compareArr = await requestURL();
+    console.log("Comparing prices...\n");
+    
+    //for (var x = 0; x < 2; x++) {
+    for (var x = 0; x < initialArr.length; x++) {
+        //for (var i = 0; i < 1; i++) {
+        for (var i = 0; i < initialArr[x].prices.length; i++) {
+            let initialPrice = initialArr[x].prices[i];
+            let comparePrice = compareArr[x].prices[i];
+
+            //let initialPrice = 1025;
+            //let comparePrice = 917;
+
+            //no need to compare if the price is 0
+            if (comparePrice != 0) {
+                if (comparePrice < initialPrice) {
+                    let priceDiff = ((initialPrice - comparePrice) / initialPrice) * 100;
+                    let priceDiffRound = Math.round(priceDiff * 10) / 10;
+
+                    if (priceDiffRound > 5) {
+                        console.log("SENDING WEBHOOK\n================\n" + compareArr[x].name + 
+                        "\nNew Low Price: $" + comparePrice + ".00" +
+                        "\nOld Price: $" + initialPrice + ".00" +
+                        "\nSize: " + compareArr[x].sizes[i] +
+                        "\n" + priceDiffRound + "% decrease in price\n");
+
+                        const hookMsg = new Webhook.MessageBuilder().setName('StockX Low Price Monitor')
+                            .setTitle(compareArr[x].name)
+                            .addField("New Low Price: $" + comparePrice + ".00", "")
+                            .addField("", "Old Price: $" + initialPrice + ".00")
+                            .addField("", "Size: " + compareArr[x].sizes[i])
+                            .addField("", priceDiffRound + "% decrease in price")
+                            .addField("Link: " + compareArr[x].url)
+                            .setImage(compareArr[x].image);
+
+                        Hook.send(hookMsg);
+                    }
+                    initialArr[x].prices[i] = compareArr[x].prices[i];
+                }
+                else if (comparePrice > initialPrice) {
+                    //console.log('Compare price is more than the initial ');
+                }
+                else {
+                    //console.log('No change found');
+                }
+            }
+        }
+    }
+}
+
+function getSizes($) {
+    let sizeArr = [];
+    $('div.mobile-header-inner > div.options > div.form-group > div.select-control > div.select-options > ul.list-unstyled > li.select-option > div.inset > div.title').each((i, el) => {
+        let size = $(el).text();
+        sizeArr.push(size);
+    });
+    return sizeArr;
+}
+
+//will return an array of prices
+function getPrices($) {
+    let priceArr = [];
+    $('div.mobile-header-inner > div.options > div.form-group > div.select-control > div.select-options > ul.list-unstyled > li.select-option > div.inset > div.subtitle').each((i, el) => {
+        //price of shoe
+        let price = $(el).text();
+        //check if it isnt 0
+        if (price.startsWith("$")) {
+            //strip the dollar sign
+            priceFilter = price.substr(1);
+            //make int so we can compare
+            priceArr.push(parseInt(priceFilter.replace(",", "")));
+        }
+        else
+            priceArr.push(0);
+    });
+    return priceArr;
+}
+
+async function main() {
+    console.log("Monitor starting...");
+    console.log("Scraping for initial prices");
+
+    var initialArr = await requestURL();
+    console.log("Initial prices gathered\n");
+
+    setInterval(async () => {
+        await comparePrices(initialArr);
+    }, config.interval);
+}
+
+main();
