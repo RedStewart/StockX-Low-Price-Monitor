@@ -70,7 +70,8 @@ async function comparePrices(initialArr) {
                     initialArr[x].prices[i] = compareArr[x].prices[i];
                 }
                 else if (comparePrice > initialPrice) {
-                    //console.log('Compare price is more than the initial ');
+                    //if the compare price is more than the initial, set the inital to the compare
+                    initialArr[x].prices[i] = compareArr[x].prices[i];
                 }
                 else {
                     //console.log('No change found');
