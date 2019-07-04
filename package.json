@@ -9,7 +9,7 @@
   "author": "Reed Stewart",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.18.1",
     "cheerio": "^1.0.0-rc.3",
     "npm": "^6.9.0",
     "path": "^0.12.7",
