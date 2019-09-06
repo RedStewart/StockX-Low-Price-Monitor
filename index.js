@@ -9,11 +9,16 @@ const config = require(path.join(__dirname, 'config.json'));
 const Hook = new Webhook.Webhook(config.webhook);
 var shoeUrl = config.shoeURL;
 
-async function requestURL() {
-  let url = 'https://stockx.com/' + shoeUrl[0];
+const requestURL = async () => {
+  let url = `https://stockx.com/${shoeUrl[0]}`;
 
-  let response = await axios.get(url);
-  console.log(response);
+  try {
+    let response = await axios.get('https://stockx.com/');
+    // console.log(response.status);
+    console.log('yozza');
+  } catch (e) {
+    console.error(e);
+  }
 
   // var shoeArr = [];
   // for (let x = 0; x < shoeUrl.length; x++) {
@@ -32,7 +37,7 @@ async function requestURL() {
   //console.log("Time elapsed: [" + (Date.now() - beforeTime) / 1000 + "] " + shoeName);
   // }
   // return shoeArr;
-}
+};
 
 async function comparePrices(initialArr) {
   let compareArr = await requestURL();
@@ -125,7 +130,7 @@ function getPrices($) {
   return priceArr;
 }
 
-async function main() {
+const main = async () => {
   console.log('Monitor starting...');
   console.log('Scraping for initial prices');
 
@@ -135,6 +140,6 @@ async function main() {
   // setInterval(async () => {
   //     await comparePrices(initialArr);
   // }, config.interval);
-}
+};
 
 main();
