@@ -1,19 +1,19 @@
-const axios = require("axios");
-const cheerio = require("cheerio");
-const path = require("path");
-const Webhook = require("webhook-discord");
-const shoe = require("./Shoe");
+const axios = require('axios');
+const cheerio = require('cheerio');
+const path = require('path');
+const Webhook = require('webhook-discord');
+const shoe = require('./Shoe');
 const Shoe = shoe.Shoe;
 const colourArr = [
-  "#FF3855",
-  "#FF7A00",
-  "#FDFF00",
-  "#87FF2A",
-  "#4F86F7",
-  "#DB91EF",
-  "#6F2DA8"
+  '#FF3855',
+  '#FF7A00',
+  '#FDFF00',
+  '#87FF2A',
+  '#4F86F7',
+  '#DB91EF',
+  '#6F2DA8'
 ];
-const config = require(path.join(__dirname, "config.json"));
+const config = require(path.join(__dirname, 'config.json'));
 let shoeUrl = config.shoeURL;
 
 const requestURL = async () => {
@@ -26,32 +26,34 @@ const requestURL = async () => {
       let url = `https://stockx.com/${shoeUrl[x]}`;
       let response = await axios.get(url, {
         headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36",
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36',
           Accept:
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
-          "Accept-Encoding": "gzip, deflate, br",
-          "sec-fetch-user": "?1"
+            'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'sec-fetch-user': '?1'
         }
       });
       let $ = cheerio.load(response.data);
 
-      let shoeName = $("h1").text();
+      let shoeName = $('h1').text();
+      let shoeImage = $('div.image-container > img').attr('src');
       let sizeArr = getSizes($);
       let priceArr = getPrices($);
-      for(let i = 0; i < sizeArr; i++) {
-        shoeObj.shoes[x]= {sizePrice: {size: sizeArr[i], price: priceArr[i]}}
-      }
-      let shoeImage = $("div.image-container > img").attr("src");
 
       shoeObj.shoes[x] = {
         name: shoeName,
         url,
-        imgSrc: shoeImage
+        imgSrc: shoeImage,
+        sizePrice: []
       };
-
-      // shoeArr.push(new Shoe(shoeName, sizeArr, priceArr, url, shoeImage));
-
+      for (let i = 0; i < sizeArr.length; i++) {
+        // shoeObj.shoes[x].sizePrice[sizeArr[i]] = priceArr[i];
+        shoeObj.shoes[x].sizePrice[i] = {
+          size: sizeArr[i],
+          price: priceArr[i]
+        };
+      }
     } catch (e) {
       // do something here for if the request fails
       console.log(e);
@@ -64,7 +66,7 @@ async function comparePrices(initialArr) {
   const Hook = new Webhook.Webhook(config.webhook);
 
   let compareArr = await requestURL();
-  console.log(logTime() + "Comparing prices...\n");
+  console.log(logTime() + 'Comparing prices...\n');
 
   // for (var x = 0; x < 2; x++) {
   for (var x = 0; x < initialArr.length; x++) {
@@ -85,30 +87,30 @@ async function comparePrices(initialArr) {
           if (priceDiffRound > 5) {
             console.log(
               logTime() +
-                "SENDING WEBHOOK\n=============================\n" +
+                'SENDING WEBHOOK\n=============================\n' +
                 compareArr[x].name +
-                "\nSize: " +
+                '\nSize: ' +
                 compareArr[x].sizes[i] +
-                "\nNew Low Price: $" +
+                '\nNew Low Price: $' +
                 comparePrice +
-                ".00" +
-                "\nOld Price: $" +
+                '.00' +
+                '\nOld Price: $' +
                 initialPrice +
-                ".00" +
-                "\n" +
+                '.00' +
+                '\n' +
                 priceDiffRound +
-                "% decrease in price\n"
+                '% decrease in price\n'
             );
 
             const hookMsg = new Webhook.MessageBuilder()
-              .setName("StockX Low Price Monitor")
+              .setName('StockX Low Price Monitor')
               .setColor(colourArr[Math.floor(Math.random() * colourArr.length)])
               .setTitle(compareArr[x].name)
-              .addField("Size: " + compareArr[x].sizes[i], "")
-              .addField("New Low Price: $" + comparePrice + ".00", "")
-              .addField("", "Old Price: $" + initialPrice + ".00")
-              .addField("", priceDiffRound + "% decrease in price")
-              .addField("Link: " + compareArr[x].url)
+              .addField('Size: ' + compareArr[x].sizes[i], '')
+              .addField('New Low Price: $' + comparePrice + '.00', '')
+              .addField('', 'Old Price: $' + initialPrice + '.00')
+              .addField('', priceDiffRound + '% decrease in price')
+              .addField('Link: ' + compareArr[x].url)
               .setImage(compareArr[x].image);
 
             Hook.send(hookMsg);
@@ -128,7 +130,7 @@ async function comparePrices(initialArr) {
 const getSizes = $ => {
   let sizeArr = [];
   $(
-    "div.mobile-header-inner > div.options > div.form-group > div.select-control > div.select-options > ul.list-unstyled > li.select-option > div.inset > div.title"
+    'div.mobile-header-inner > div.options > div.form-group > div.select-control > div.select-options > ul.list-unstyled > li.select-option > div.inset > div.title'
   ).each((i, el) => {
     let size = $(el).text();
     sizeArr.push(size);
@@ -140,33 +142,36 @@ const getSizes = $ => {
 const getPrices = $ => {
   let priceArr = [];
   $(
-    "div.mobile-header-inner > div.options > div.form-group > div.select-control > div.select-options > ul.list-unstyled > li.select-option > div.inset > div.subtitle"
+    'div.mobile-header-inner > div.options > div.form-group > div.select-control > div.select-options > ul.list-unstyled > li.select-option > div.inset > div.subtitle'
   ).each((i, el) => {
     //price of shoe
     let price = $(el).text();
     //check if it isnt 0
-    if (price.startsWith("$")) {
+    if (price.startsWith('$')) {
       //strip the dollar sign
       priceFilter = price.substr(1);
       //make int so we can compare
-      priceArr.push(parseInt(priceFilter.replace(",", "")));
+      priceArr.push(parseInt(priceFilter.replace(',', '')));
     } else priceArr.push(0);
   });
   return priceArr;
 };
 
 const main = async () => {
-  if (config.webhook === "" || undefined) {
+  if (config.webhook === '' || undefined) {
     console.error(
-      "ERROR: Please enter a valid webhook URL in the config file\n"
+      'ERROR: Please enter a valid webhook URL in the config file\n'
     );
   } else {
-    console.log(logTime() + "Monitor starting...");
-    console.log(logTime() + "Scraping for initial prices");
+    console.log(logTime() + 'Monitor starting...');
+    console.log(logTime() + 'Scraping for initial prices');
 
     let initialArr = await requestURL();
-    console.log(logTime() + "Initial prices gathered\n");
+    console.log(logTime() + 'Initial prices gathered\n');
     console.log(initialArr);
+    console.log(initialArr.shoes[0].sizePrice);
+    console.log(initialArr.shoes[0].sizePrice[0].size);
+    console.log(initialArr.shoes[0].sizePrice[0].price);
 
     //   setInterval(async () => {
     //     await comparePrices(initialArr);
@@ -182,12 +187,12 @@ function logTime() {
   let m = formatTime(date.getMinutes(), 2);
   let s = formatTime(date.getSeconds(), 2);
   let ms = formatTime(date.getMilliseconds(), 3);
-  return (date = "[" + h + ":" + m + ":" + s + ":" + ms + "] ");
+  return (date = '[' + h + ':' + m + ':' + s + ':' + ms + '] ');
 }
 
 function formatTime(x, n) {
   while (x.toString().length < n) {
-    x = "0" + x;
+    x = '0' + x;
   }
   return x;
 }
