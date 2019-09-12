@@ -2,19 +2,24 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const path = require('path');
 const Webhook = require('webhook-discord');
-const shoe = require('./Shoe');
-const Shoe = shoe.Shoe;
-const colourArr = [
-  '#FF3855',
-  '#FF7A00',
-  '#FDFF00',
-  '#87FF2A',
-  '#4F86F7',
-  '#DB91EF',
-  '#6F2DA8'
-];
 const config = require(path.join(__dirname, 'config.json'));
-let shoeUrl = config.shoeURL;
+const shoeUrl = config.shoeURL;
+
+const logTime = () => {
+  let date = new Date();
+  let h = formatTime(date.getHours(), 2);
+  let m = formatTime(date.getMinutes(), 2);
+  let s = formatTime(date.getSeconds(), 2);
+  let ms = formatTime(date.getMilliseconds(), 3);
+  return (date = '[' + h + ':' + m + ':' + s + ':' + ms + '] ');
+};
+
+const formatTime = (x, n) => {
+  while (x.toString().length < n) {
+    x = '0' + x;
+  }
+  return x;
+};
 
 const requestURL = async () => {
   let shoeObj = {
@@ -22,7 +27,7 @@ const requestURL = async () => {
   };
   for (let x = 0; x < shoeUrl.length; x++) {
     try {
-      let url = `https://stockx.com/${shoeUrl[x]}`;
+      const url = `https://stockx.com/${shoeUrl[x]}`;
       let response = await axios.get(url, {
         headers: {
           'User-Agent':
@@ -33,7 +38,6 @@ const requestURL = async () => {
           'sec-fetch-user': '?1'
         }
       });
-      // Have outside of function so if the page isn't loaded then can check the name
       let $ = cheerio.load(response.data);
       let shoeName = $('h1').text();
 
@@ -64,7 +68,7 @@ const requestURL = async () => {
   return shoeObj;
 };
 
-async function comparePrices(initialArr) {
+const comparePrices = initialArr => {
   const Hook = new Webhook.Webhook(config.webhook);
 
   let compareArr = await requestURL();
@@ -165,15 +169,16 @@ const main = async () => {
       'ERROR: Please enter a valid webhook URL in the config file\n'
     );
   } else {
-    let initialArr;
+    let initialPrices;
     console.log(logTime() + 'Monitor starting...');
     console.log(logTime() + 'Scraping for initial prices');
 
-    while (initialArr === undefined) {
-      console.log('initialArr is undefined');
-      initialArr = await requestURL();
+    while (initialPrices === undefined) {
+      console.log('initialPrices is undefined');
+      initialPrices = await requestURL();
     }
     console.log(logTime() + 'Initial prices gathered\n');
+    console.log(initialPrices);
 
     //   setInterval(async () => {
     //     await comparePrices(initialArr);
@@ -182,19 +187,3 @@ const main = async () => {
 };
 
 main();
-
-function logTime() {
-  let date = new Date();
-  let h = formatTime(date.getHours(), 2);
-  let m = formatTime(date.getMinutes(), 2);
-  let s = formatTime(date.getSeconds(), 2);
-  let ms = formatTime(date.getMilliseconds(), 3);
-  return (date = '[' + h + ':' + m + ':' + s + ':' + ms + '] ');
-}
-
-function formatTime(x, n) {
-  while (x.toString().length < n) {
-    x = '0' + x;
-  }
-  return x;
-}
