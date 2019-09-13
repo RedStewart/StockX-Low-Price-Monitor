@@ -69,9 +69,13 @@ const requestURL = async () => {
 };
 
 const comparePrices = initialArr => {
+  let comparePrice;
   const Hook = new Webhook.Webhook(config.webhook);
 
-  let compareArr = await requestURL();
+  // Use while loop to make sure the objects thats returned doesnt have any errors
+  while(comparePrice === undefined){
+    let compareArr = await requestURL();
+  }
   console.log(logTime() + 'Comparing prices...\n');
 
   // for (var x = 0; x < 2; x++) {
