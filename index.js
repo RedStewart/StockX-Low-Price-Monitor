@@ -1,8 +1,9 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const path = require('path');
-const Webhook = require('webhook-discord');
 const config = require(path.join(__dirname, 'config.json'));
+const Webhook = require('webhook-discord');
+const webhookColour = config.webhookColour;
 const shoeUrl = config.shoeURL;
 
 const logTime = () => {
@@ -68,74 +69,74 @@ const requestURL = async () => {
   return shoeObj;
 };
 
-const comparePrices = initialArr => {
-  let comparePrice;
+const comapreShoePrices = async initialPrices => {
+  console.log(logTime() + 'Scraping comparison prices');
+  let comparePrices;
   const Hook = new Webhook.Webhook(config.webhook);
 
   // Use while loop to make sure the objects thats returned doesnt have any errors
-  while(comparePrice === undefined){
-    let compareArr = await requestURL();
+  while (comparePrices === undefined) {
+    comparePrices = await requestURL();
   }
   console.log(logTime() + 'Comparing prices...\n');
 
-  // for (var x = 0; x < 2; x++) {
-  for (var x = 0; x < initialArr.length; x++) {
-    // for (var i = 0; i < 1; i++) {
-    for (var i = 0; i < initialArr[x].prices.length; i++) {
-      let initialPrice = initialArr[x].prices[i];
-      let comparePrice = compareArr[x].prices[i];
+  for (let x = 0; x < 1; x++) {
+    // for (let x = 0; x < initialPrices.shoes.length; x++) {
+    for (let i = 0; i < 1; i++) {
+      // for (let i = 0; i < initialPrices.shoes[x].sizePrice.length; i++) {
+      // let initialPrice = initialPrices.shoes[x].sizePrice[i].price;
+      // let comparePrice = comparePrices.shoes[x].sizePrice[i].price;
 
-      // let initialPrice = 1025;
-      // let comparePrice = 917;
+      let initialPrice = 1025;
+      let comparePrice = 917;
 
       //no need to compare if the price is 0
-      if (comparePrice != 0) {
+      if (comparePrice !== 0) {
+        // if the new price found is lower than the price thats stored
         if (comparePrice < initialPrice) {
+          // figure out the price difference
           let priceDiff = ((initialPrice - comparePrice) / initialPrice) * 100;
+          // round the price difference to a readable number
           let priceDiffRound = Math.round(priceDiff * 10) / 10;
 
+          // Check if the price difference is greater than 5%
           if (priceDiffRound > 5) {
             console.log(
-              logTime() +
-                'SENDING WEBHOOK\n=============================\n' +
-                compareArr[x].name +
-                '\nSize: ' +
-                compareArr[x].sizes[i] +
-                '\nNew Low Price: $' +
-                comparePrice +
-                '.00' +
-                '\nOld Price: $' +
-                initialPrice +
-                '.00' +
-                '\n' +
-                priceDiffRound +
-                '% decrease in price\n'
+              `${logTime()}\n       SENDING WEBHOOK       \n=============================\n${
+                comparePrices.shoes[x].name
+              }\nSize: ${
+                comparePrices.shoes[x].sizePrice[i].size
+              }\nNew Low Price: $${comparePrice}.00\nOld Price: $${initialPrice}.00\n${priceDiffRound}% decrease in price`
             );
-
+            // send webhook to discord
             const hookMsg = new Webhook.MessageBuilder()
               .setName('StockX Low Price Monitor')
-              .setColor(colourArr[Math.floor(Math.random() * colourArr.length)])
-              .setTitle(compareArr[x].name)
-              .addField('Size: ' + compareArr[x].sizes[i], '')
+              .setColor(
+                webhookColour[Math.floor(Math.random() * webhookColour.length)]
+              )
+              .setTitle(comparePrices.shoes[x].name)
+              .addField('Size: ' + comparePrices.shoes[x].sizePrice[i].size, '')
               .addField('New Low Price: $' + comparePrice + '.00', '')
               .addField('', 'Old Price: $' + initialPrice + '.00')
               .addField('', priceDiffRound + '% decrease in price')
-              .addField('Link: ' + compareArr[x].url)
-              .setImage(compareArr[x].image);
+              .addField('Link: ' + comparePrices.shoes[x].url)
+              .setImage(comparePrices.shoes[x].imgSrc);
 
             Hook.send(hookMsg);
           }
-          initialArr[x].prices[i] = compareArr[x].prices[i];
+          initialPrices.shoes[x].sizePrice[i].price =
+            comparePrices.shoes[x].sizePrice[i].price;
         } else if (comparePrice > initialPrice) {
           //if the compare price is more than the initial, set the inital to the compare
-          //initialArr[x].prices[i] = compareArr[x].prices[i];
+          initialPrices.shoes[x].sizePrice[i].price =
+            comparePrices.shoes[x].sizePrice[i].price;
         } else {
-          //console.log('No change found');
+          console.log('No change found');
         }
       }
     }
   }
-}
+};
 
 const getSizes = $ => {
   let sizeArr = [];
@@ -178,15 +179,13 @@ const main = async () => {
     console.log(logTime() + 'Scraping for initial prices');
 
     while (initialPrices === undefined) {
-      console.log('initialPrices is undefined');
       initialPrices = await requestURL();
     }
-    console.log(logTime() + 'Initial prices gathered\n');
-    console.log(initialPrices);
+    console.log(logTime() + 'Initial prices gathered');
 
-    //   setInterval(async () => {
-    //     await comparePrices(initialArr);
-    //   }, config.interval);
+    setInterval(async () => {
+      await comapreShoePrices(initialPrices);
+    }, config.interval);
   }
 };
 
