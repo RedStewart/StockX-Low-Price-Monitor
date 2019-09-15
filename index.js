@@ -77,32 +77,35 @@ const comapreShoePrices = async initialPrices => {
   // Use while loop to make sure the objects thats returned doesnt have any errors
   while (comparePrices === undefined) {
     comparePrices = await requestURL();
+    console.log(comparePrices);
+    console.log('here');
   }
   console.log(logTime() + 'Comparing prices...\n');
 
-  for (let x = 0; x < 1; x++) {
-    // for (let x = 0; x < initialPrices.shoes.length; x++) {
-    for (let i = 0; i < 1; i++) {
-      // for (let i = 0; i < initialPrices.shoes[x].sizePrice.length; i++) {
-      // let initialPrice = initialPrices.shoes[x].sizePrice[i].price;
-      // let comparePrice = comparePrices.shoes[x].sizePrice[i].price;
+  // for (let x = 0; x < 1; x++) {
+  for (let x = 0; x < initialPrices.shoes.length; x++) {
+    // for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < initialPrices.shoes[x].sizePrice.length; i++) {
+      let initialPrice = initialPrices.shoes[x].sizePrice[i].price;
+      let comparePrice = comparePrices.shoes[x].sizePrice[i].price;
 
-      let initialPrice = 1025;
-      let comparePrice = 917;
+      // let initialPrice = 1025;
+      // let comparePrice = 917;
 
       //no need to compare if the price is 0
       if (comparePrice !== 0) {
         // if the new price found is lower than the price thats stored
         if (comparePrice < initialPrice) {
           // figure out the price difference
-          let priceDiff = ((initialPrice - comparePrice) / initialPrice) * 100;
+          const priceDiff =
+            ((initialPrice - comparePrice) / initialPrice) * 100;
           // round the price difference to a readable number
-          let priceDiffRound = Math.round(priceDiff * 10) / 10;
+          const priceDiffRound = Math.round(priceDiff * 10) / 10;
 
           // Check if the price difference is greater than 5%
           if (priceDiffRound > 5) {
             console.log(
-              `${logTime()}\n       SENDING WEBHOOK       \n=============================\n${
+              `${logTime()}\nSENDING WEBHOOK\n=============================\n${
                 comparePrices.shoes[x].name
               }\nSize: ${
                 comparePrices.shoes[x].sizePrice[i].size
@@ -131,7 +134,7 @@ const comapreShoePrices = async initialPrices => {
           initialPrices.shoes[x].sizePrice[i].price =
             comparePrices.shoes[x].sizePrice[i].price;
         } else {
-          console.log('No change found');
+          // console.log('No change found');
         }
       }
     }
