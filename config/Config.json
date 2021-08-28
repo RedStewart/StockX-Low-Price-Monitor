@@ -1,7 +1,7 @@
 {
   "interval": 15000,
 
-  "shoeURL": [
+  "productIdArr": [
     "nike-ld-waffle-sacai-dark-grey-black-anthracite",
     "nike-ld-waffle-sacai-white-grey",
     "nike-ld-waffle-sacai-green-purple",
