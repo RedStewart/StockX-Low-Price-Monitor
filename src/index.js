@@ -1,92 +1,88 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-const path = require('path');
-const config = require(path.join(__dirname, 'config.json'));
 const Webhook = require('webhook-discord');
-const webhookColour = config.webhookColour;
-const shoeUrl = config.shoeURL;
+// const webhookColour = config.webhookColour;
+// const shoeUrl = Config.productIdArr;
 
-const logTime = () => {
-  let date = new Date();
-  let h = formatTime(date.getHours(), 2);
-  let m = formatTime(date.getMinutes(), 2);
-  let s = formatTime(date.getSeconds(), 2);
-  let ms = formatTime(date.getMilliseconds(), 3);
-  return (date = '[' + h + ':' + m + ':' + s + ':' + ms + '] ');
-};
+const Config = require('../config/Config.json');
+const Logger = require('../tools/Logger');
+const Product = require('./Product');
+const StockXAPI = require('./StockX');
 
-const formatTime = (x, n) => {
-  while (x.toString().length < n) {
-    x = '0' + x;
+const getProduct = async (productKey) => {
+  try {
+    const data = await StockXAPI.getData(productKey);
+
+    if (!data) throw 'Failed to fetch Product data';
+
+    const sizeAskArr = data['variants'].map((el) => {
+      return {
+        size: el['traits']['size'],
+        askPrice: el['market']['bidAskData']['lowestAsk']
+      };
+    });
+
+    return new Product(
+      data['title'],
+      data['brand'],
+      data['styleId'],
+      `https://stockx.com/${productKey}`,
+      data['media']['imageUrl'],
+      data['urlKey'],
+      {
+        price: data['market']['bidAskData']['highestBid'],
+        size: data['market']['bidAskData']['highestBidSize']
+      },
+      {
+        price: data['market']['bidAskData']['lowestAsk'],
+        size: data['market']['bidAskData']['lowestAskSize']
+      },
+      {
+        totalNumAsks: data['market']['bidAskData']['numberOfAsks'],
+        totalNumBids: data['market']['bidAskData']['numberOfBids']
+      },
+      data['market']['salesInformation'],
+      sizeAskArr
+    );
+  } catch (e) {
+    Logger.error(e);
+    return;
   }
-  return x;
 };
 
-const requestURL = async () => {
-  let shoeObj = {
-    shoes: []
-  };
-  for (let x = 0; x < shoeUrl.length; x++) {
-    try {
-      const url = `https://stockx.com/${shoeUrl[x]}`;
-      let response = await axios.get(url, {
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36',
-          Accept:
-            'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'sec-fetch-user': '?1'
-        }
-      });
-      let $ = cheerio.load(response.data);
-      let shoeName = $('h1').text();
-
-      if (shoeName !== '') {
-        let shoeImage = $('div.image-container > img').attr('src');
-        let sizeArr = getSizes($);
-        let priceArr = getPrices($);
-
-        shoeObj.shoes[x] = {
-          name: shoeName,
-          url,
-          imgSrc: shoeImage,
-          sizePrice: []
-        };
-        for (let i = 0; i < sizeArr.length; i++) {
-          shoeObj.shoes[x].sizePrice[i] = {
-            size: sizeArr[i],
-            price: priceArr[i]
-          };
-        }
-      } else {
-        return undefined;
-      }
-    } catch (e) {
-      return undefined;
-    }
-  }
-  return shoeObj;
-};
-
-const comapreShoePrices = async initialPrices => {
-  console.log(logTime() + 'Scraping comparison prices');
-  let comparePrices;
-  const Hook = new Webhook.Webhook(config.webhook);
-
+const comapreShoePrices = async (savedProduct, productKey) => {
+  Logger.log('Scraping comparison prices');
   // Use while loop to make sure the objects thats returned doesnt have any errors
-  while (comparePrices === undefined) {
-    comparePrices = await requestURL();
-    console.log(comparePrices);
-    console.log('here');
-  }
-  console.log(logTime() + 'Comparing prices...\n');
+  let compareProduct;
+  while (!compareProduct) compareProduct = await getProduct(productKey);
 
+  savedProduct.sizeAskArr.forEach((el) => {
+    const savedAskPrice = el.askPrice;
+    const compareAskPrice = compareProduct.sizeAskArr.find(
+      (ele) => ele.size === el.size
+    ).askPrice;
+
+    if (compareAskPrice < savedAskPrice) {
+      // set the saved price to the compare price
+      // send webhook
+    }
+
+    if (compareAskPrice > savedAskPrice) {
+      // set the saved price to the compare price
+    }
+
+    // if(sizeAskObj.askPrice  el.askPrice)
+    console.log(sizeAskObj);
+  });
+
+  return;
+
+  Logger.log('Comparing prices...');
   // for (let x = 0; x < 1; x++) {
-  for (let x = 0; x < initialPrices.shoes.length; x++) {
+  for (let x = 0; x < savedProduct.shoes.length; x++) {
     // for (let i = 0; i < 1; i++) {
-    for (let i = 0; i < initialPrices.shoes[x].sizePrice.length; i++) {
-      let initialPrice = initialPrices.shoes[x].sizePrice[i].price;
+    for (let i = 0; i < savedProduct.shoes[x].sizePrice.length; i++) {
+      let initialPrice = savedProduct.shoes[x].sizePrice[i].price;
       let comparePrice = comparePrices.shoes[x].sizePrice[i].price;
 
       // let initialPrice = 1025;
@@ -127,11 +123,11 @@ const comapreShoePrices = async initialPrices => {
 
             Hook.send(hookMsg);
           }
-          initialPrices.shoes[x].sizePrice[i].price =
+          savedProduct.shoes[x].sizePrice[i].price =
             comparePrices.shoes[x].sizePrice[i].price;
         } else if (comparePrice > initialPrice) {
           //if the compare price is more than the initial, set the inital to the compare
-          initialPrices.shoes[x].sizePrice[i].price =
+          savedProduct.shoes[x].sizePrice[i].price =
             comparePrices.shoes[x].sizePrice[i].price;
         } else {
           // console.log('No change found');
@@ -141,55 +137,36 @@ const comapreShoePrices = async initialPrices => {
   }
 };
 
-const getSizes = $ => {
-  let sizeArr = [];
-  $(
-    'div.mobile-header-inner > div.options > div.form-group > div.select-control > div.select-options > ul.list-unstyled > li.select-option > div.inset > div.title'
-  ).each((i, el) => {
-    let size = $(el).text();
-    sizeArr.push(size);
-  });
-  return sizeArr;
-};
+const checkConfig = () => {
+  let errArr = [];
 
-//will return an array of prices
-const getPrices = $ => {
-  let priceArr = [];
-  $(
-    'div.mobile-header-inner > div.options > div.form-group > div.select-control > div.select-options > ul.list-unstyled > li.select-option > div.inset > div.subtitle'
-  ).each((i, el) => {
-    //price of shoe
-    let price = $(el).text();
-    //check if it isnt 0
-    if (price.startsWith('$')) {
-      //strip the dollar sign
-      priceFilter = price.substr(1);
-      //make int so we can compare
-      priceArr.push(parseInt(priceFilter.replace(',', '')));
-    } else priceArr.push(0);
-  });
-  return priceArr;
+  if (!Config.webhookURL)
+    errArr.push('Please enter a valid Discord webhook URL');
+
+  if (Config.productKeyArr.length < 1)
+    errArr.push("Please enter product ID's in your Config.json file");
+
+  if (errArr.length > 0) {
+    errArr.forEach((el) => Logger.error(el));
+    process.exit();
+  }
 };
 
 const main = async () => {
-  if (config.webhook === '' || undefined) {
-    console.error(
-      'ERROR: Please enter a valid webhook URL in the config file\n'
-    );
-  } else {
-    let initialPrices;
-    console.log(logTime() + 'Monitor starting...');
-    console.log(logTime() + 'Scraping for initial prices');
+  checkConfig();
 
-    while (initialPrices === undefined) {
-      initialPrices = await requestURL();
-    }
-    console.log(logTime() + 'Initial prices gathered');
+  Logger.log('Monitor starting...');
+  Logger.log('Scraping initial prices');
 
-    setInterval(async () => {
-      await comapreShoePrices(initialPrices);
-    }, config.interval);
-  }
+  let savedProduct;
+  while (!savedProduct)
+    savedProduct = await getProduct('adidas-yeezy-boost-350-v2-light');
+
+  Logger.log('Initial prices gathered');
+
+  setInterval(async () => {
+    await comapreShoePrices(savedProduct, 'adidas-yeezy-boost-350-v2-light');
+  }, Config.interval);
 };
 
 main();
